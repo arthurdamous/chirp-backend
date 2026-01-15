@@ -1,5 +1,6 @@
 package com.plcoding.chirp.api.dto
 
+import com.plcoding.chirp.api.util.Password
 import jakarta.validation.constraints.Email
 import org.hibernate.validator.constraints.Length
 import jakarta.validation.constraints.Pattern
@@ -9,9 +10,6 @@ data class RegisterRequest(
     val email: String,
     @field:Length(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
     val username: String,
-    @field:Pattern(
-        regexp = "^(?=.*[\\d!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?])(.{8,})$",
-        message = "Password must be at least 8 characters and contain at least one digit or special character"
-    )
+    @field:Password
     val password: String
 )

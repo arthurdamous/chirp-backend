@@ -33,3 +33,10 @@ spring:
 jwt:
   secret: ${JWT_SECRET_BASE64}
   expiration-minutes: 15
+
+chirp:
+  email:
+    verification:
+      expiry-hours: 24
+    reset-password:
+      expiry-minutes: 30
