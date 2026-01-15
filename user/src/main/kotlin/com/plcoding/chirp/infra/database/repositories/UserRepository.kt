@@ -1,4 +1,4 @@
-package com.plcoding.chirp.repositories
+package com.plcoding.chirp.infra.database.repositories
 
 import com.plcoding.chirp.domain.model.UserId
 import com.plcoding.chirp.infra.database.entities.UserEntity

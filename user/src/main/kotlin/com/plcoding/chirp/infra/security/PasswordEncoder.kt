@@ -10,5 +10,7 @@ class PasswordEncoder {
 
     fun encode(rawPassword: String): String = bcrypt.encode(rawPassword).orEmpty()
 
-    fun matches(rawPassword: String, hashedPassword: String): Boolean = bcrypt.encode(rawPassword) == hashedPassword
+    fun matches(rawPassword: String, hashedPassword: String): Boolean {
+        return bcrypt.matches(rawPassword, hashedPassword)
+    }
 }
