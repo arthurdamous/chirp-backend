@@ -1,5 +1,6 @@
 package com.plcoding.chirp.api.controller
 
+import com.plcoding.chirp.api.config.IpRateLimit
 import com.plcoding.chirp.api.dto.AuthenticatedUserDto
 import com.plcoding.chirp.api.dto.ChangePasswordRequest
 import com.plcoding.chirp.api.dto.EmailRequest
@@ -10,6 +11,7 @@ import com.plcoding.chirp.api.dto.ResetPasswordRequest
 import com.plcoding.chirp.api.dto.UserDto
 import com.plcoding.chirp.api.mappers.toAuthenticatedUserDto
 import com.plcoding.chirp.api.mappers.toUserDto
+import com.plcoding.chirp.api.util.requestUserId
 import com.plcoding.chirp.infra.rate_limiting.EmailRateLimiter
 import com.plcoding.chirp.service.AuthService
 import com.plcoding.chirp.service.EmailVerificationService
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,6 +35,11 @@ class AuthController(
 ) {
 
     @PostMapping("/register")
+    @IpRateLimit(
+        requests = 10,
+        duration = 1L,
+        unit = TimeUnit.HOURS
+    )
     fun register(
         @Valid @RequestBody body: RegisterRequest
     ): UserDto {
@@ -43,6 +51,11 @@ class AuthController(
     }
 
     @PostMapping("/login")
+    @IpRateLimit(
+        requests = 3,
+        duration = 1L,
+        unit = TimeUnit.HOURS
+    )
     fun login(
         @RequestBody body: LoginRequest,
     ): AuthenticatedUserDto {
@@ -74,6 +87,11 @@ class AuthController(
     }
 
     @PostMapping("/reset-password")
+    @IpRateLimit(
+        requests = 10,
+        duration = 1L,
+        unit = TimeUnit.HOURS
+    )
     fun resetPassword(
         @Valid @RequestBody body: ResetPasswordRequest
     ) {
@@ -84,6 +102,11 @@ class AuthController(
     }
 
     @PostMapping("/forgot-password")
+    @IpRateLimit(
+        requests = 10,
+        duration = 1L,
+        unit = TimeUnit.HOURS
+    )
     fun forgotPassword(
         @Valid @RequestBody body: EmailRequest
     ) {
@@ -94,10 +117,19 @@ class AuthController(
     fun changePassword(
         @Valid @RequestBody body: ChangePasswordRequest
     ) {
-        //TODO: Implement this
+        passwordResetService.changePassword(
+            userId = requestUserId,
+            oldPassword = body.oldPassword,
+            newPassword = body.newPassword
+        )
     }
 
     @PostMapping("/resend-verification")
+    @IpRateLimit(
+        requests = 10,
+        duration = 1L,
+        unit = TimeUnit.HOURS
+    )
     fun resendVerification(
         @Valid @RequestBody body: EmailRequest
     ) {

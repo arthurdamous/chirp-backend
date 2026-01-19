@@ -4,3 +4,11 @@ spring:
       ddl-auto: validate
 jwt:
   expiration-minutes: 15
+
+nginx:
+  require-proxy: true
+
+chirp:
+  rate-limit:
+    ip:
+      apply-limit: true
