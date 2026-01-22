@@ -9,6 +9,8 @@ nginx:
   require-proxy: true
 
 chirp:
+  email:
+    url: "http://localhost:8080"
   rate-limit:
     ip:
       apply-limit: true

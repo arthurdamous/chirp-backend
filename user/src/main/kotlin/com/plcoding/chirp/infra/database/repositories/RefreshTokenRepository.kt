@@ -1,6 +1,6 @@
 package com.plcoding.chirp.infra.database.repositories
 
-import com.plcoding.chirp.domain.model.UserId
+import com.plcoding.chirp.domain.type.UserId
 import com.plcoding.chirp.infra.database.entities.RefreshTokenEntity
 import org.springframework.data.jpa.repository.JpaRepository
 

@@ -1,0 +1,18 @@
+package com.plcoding.chirp.service
+
+import org.springframework.stereotype.Service
+import org.thymeleaf.TemplateEngine
+import org.thymeleaf.context.Context
+
+@Service
+class EmailTemplateService(
+    private val templateEngine: TemplateEngine
+) {
+
+    fun processTemplate(templateName: String, model: Map<String, Any> = emptyMap()): String {
+        val context = Context().apply {
+            model.forEach { (key, value) -> setVariable(key, value) }
+        }
+        return templateEngine.process(templateName, context)
+    }
+}

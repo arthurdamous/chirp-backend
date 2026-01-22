@@ -1,5 +1,6 @@
 package com.plcoding.chirp.service
 
+import com.plcoding.chirp.domain.events.user.UserEvent
 import com.plcoding.chirp.domain.exception.EmailNotVerifiedException
 import com.plcoding.chirp.domain.exception.InvalidCredentialsException
 import com.plcoding.chirp.domain.exception.InvalidTokenException
@@ -7,13 +8,14 @@ import com.plcoding.chirp.domain.exception.UserAlreadyExistsException
 import com.plcoding.chirp.domain.exception.UserNotFoundException
 import com.plcoding.chirp.domain.model.AuthenticatedUser
 import com.plcoding.chirp.domain.model.User
-import com.plcoding.chirp.domain.model.UserId
+import com.plcoding.chirp.domain.type.UserId
 import com.plcoding.chirp.infra.database.entities.RefreshTokenEntity
 import com.plcoding.chirp.infra.database.entities.UserEntity
 import com.plcoding.chirp.infra.database.mappers.toUser
 import com.plcoding.chirp.infra.database.repositories.RefreshTokenRepository
 import com.plcoding.chirp.infra.security.PasswordEncoder
 import com.plcoding.chirp.infra.database.repositories.UserRepository
+import com.plcoding.chirp.infra.message_queue.EventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,7 +29,8 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val emailVerificationService: EmailVerificationService
+    private val emailVerificationService: EmailVerificationService,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -54,6 +57,15 @@ class AuthService(
             email = emailTrimmed
         )
 
+        eventPublisher.publish(
+            event = UserEvent.Created(
+                userId = savedUser.id,
+                email = savedUser.email,
+                username = savedUser.username,
+                verificationToken = token.token
+            )
+        )
+
         return savedUser
     }
 
@@ -68,7 +80,7 @@ class AuthService(
             throw InvalidCredentialsException()
         }
 
-        if(!user.hasVerifiedEmail) {
+        if (!user.hasVerifiedEmail) {
             throw EmailNotVerifiedException()
         }
 

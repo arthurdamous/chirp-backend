@@ -1,8 +1,7 @@
 package com.plcoding.chirp.domain.model
 
-import java.util.UUID
+import com.plcoding.chirp.domain.type.UserId
 
-typealias UserId = UUID
 
 data class User(
     val id: UserId,

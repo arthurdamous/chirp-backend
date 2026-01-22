@@ -1,14 +1,16 @@
 package com.plcoding.chirp.service
 
+import com.plcoding.chirp.domain.events.user.UserEvent
 import com.plcoding.chirp.domain.exception.InvalidCredentialsException
 import com.plcoding.chirp.domain.exception.InvalidTokenException
 import com.plcoding.chirp.domain.exception.SamePasswordException
 import com.plcoding.chirp.domain.exception.UserNotFoundException
-import com.plcoding.chirp.domain.model.UserId
+import com.plcoding.chirp.domain.type.UserId
 import com.plcoding.chirp.infra.database.entities.PasswordResetTokenEntity
 import com.plcoding.chirp.infra.database.repositories.PasswordResetTokenRepository
 import com.plcoding.chirp.infra.database.repositories.RefreshTokenRepository
 import com.plcoding.chirp.infra.database.repositories.UserRepository
+import com.plcoding.chirp.infra.message_queue.EventPublisher
 import com.plcoding.chirp.infra.security.PasswordEncoder
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
@@ -25,7 +27,8 @@ class PasswordResetService(
     private val passwordEncoder: PasswordEncoder,
     @param:Value("\${chirp.email.reset-password.expiry-minutes}")
     private val expiryMinutes: Long,
-    private val refreshTokenRepository: RefreshTokenRepository
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -41,7 +44,15 @@ class PasswordResetService(
         )
         passwordResetTokenRepository.save(token)
 
-        //TODO: Inform notification
+        eventPublisher.publish(
+            event = UserEvent.RequestResetPassword(
+                userId = user.id!!,
+                email = user.email,
+                username = user.username,
+                verificationToken = token.token,
+                expiresInMinutes = expiryMinutes
+            )
+        )
     }
 
     fun resetPassword(token: String, newPassword: String) {

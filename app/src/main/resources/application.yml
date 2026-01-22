@@ -40,12 +40,39 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         show_sql: true
+  mail:
+    port: 587
+    password: ${MAIL_PASSWORD}
+
+  rabbitmq:
+    host: leopard.lmq.cloudamqp.com
+    username: poqebfas
+    password: ${RABBITMQ_PASSWORD}
+    ssl:
+      enabled: true
+    virtual-host: poqebfas
+    listener:
+      simple:
+        acknowledge-mode: auto
+        concurrency: 1
+        max-concurrency: 3
+        prefetch: 10
+        default-requeue-rejected: true
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-interval: 10000ms
+          max-attempts: 3
+          multiplier: 2
+
+
 jwt:
   secret: ${JWT_SECRET_BASE64}
   expiration-minutes: 15
 
 chirp:
   email:
+    from: arthur.damous@gmail.com
     verification:
       expiry-hours: 24
     reset-password:
