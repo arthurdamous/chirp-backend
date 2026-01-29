@@ -6,6 +6,7 @@ import com.plcoding.chirp.domain.exception.UserNotFoundException
 import com.plcoding.chirp.domain.model.EmailVerificationToken
 import com.plcoding.chirp.infra.database.entities.EmailVerificationTokenEntity
 import com.plcoding.chirp.infra.database.mappers.toEmailVerificationToken
+import com.plcoding.chirp.infra.database.mappers.toUser
 import com.plcoding.chirp.infra.database.repositories.EmailVerificationTokenRepository
 import com.plcoding.chirp.infra.database.repositories.UserRepository
 import com.plcoding.chirp.infra.message_queue.EventPublisher
@@ -81,6 +82,14 @@ class EmailVerificationService(
             verificationToken.user.apply {
                 this.hasVerifiedEmail = true
             }
+        ).toUser()
+
+        eventPublisher.publish(
+            event = UserEvent.Verified(
+                userId = verificationToken.user.id!!,
+                email = verificationToken.user.email,
+                username = verificationToken.user.username
+            )
         )
     }
 
