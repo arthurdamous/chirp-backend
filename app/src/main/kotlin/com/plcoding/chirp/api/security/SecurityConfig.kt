@@ -1,4 +1,4 @@
-package com.plcoding.chirp.security
+package com.plcoding.chirp.api.security
 
 import com.plcoding.chirp.api.config.JwtAuthFilter
 import jakarta.servlet.DispatcherType
