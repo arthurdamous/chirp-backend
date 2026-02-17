@@ -11,6 +11,7 @@ import com.plcoding.chirp.api.dto.ws.OutgoingWebSocketMessageType
 import com.plcoding.chirp.api.dto.ws.OutgoingWebSocketMessage
 import com.plcoding.chirp.api.dto.ws.SendMessageDto
 import com.plcoding.chirp.api.mappers.toChatMessageDto
+import com.plcoding.chirp.domain.event.ChatCreatedEvent
 import com.plcoding.chirp.domain.event.ChatParticipantJoinedEvent
 import com.plcoding.chirp.domain.event.ChatParticipantLeftEvent
 import com.plcoding.chirp.domain.event.MessageDeletedEvent
@@ -181,31 +182,30 @@ class ChatWebSocketHandler(
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onJoinChat(event: ChatParticipantJoinedEvent) {
-        connectionLock.write {
-            event.userIds.forEach { userId ->
-                userChatIds.compute(userId) { _, chatIds ->
-                    (chatIds ?: mutableSetOf()).apply { add(event.chatId) }
-                }
+        updateChatForUsers(
+            event.chatId,
+            event.userIds.toList()
+        )
 
-                userToSessions[userId]?.forEach { sessionId ->
-                    chatToSessions.compute(event.chatId) { _, sessions ->
-                        (sessions ?: mutableSetOf()).apply { add(sessionId) }
-                    }
-                }
-            }
-
-            broadcastToChat(
-                chatId = event.chatId,
-                message = OutgoingWebSocketMessage(
-                    type = OutgoingWebSocketMessageType.CHAT_PARTICIPANTS_CHANGED,
-                    payload = objectMapper.writeValueAsString(
-                        ChatParticipantsChangedDto(
-                            chatId = event.chatId
-                        )
+        broadcastToChat(
+            chatId = event.chatId,
+            message = OutgoingWebSocketMessage(
+                type = OutgoingWebSocketMessageType.CHAT_PARTICIPANTS_CHANGED,
+                payload = objectMapper.writeValueAsString(
+                    ChatParticipantsChangedDto(
+                        chatId = event.chatId
                     )
                 )
             )
-        }
+        )
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onChatCreated(event: ChatCreatedEvent) {
+        updateChatForUsers(
+            event.chatId,
+            event.participantsIds
+        )
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -309,6 +309,25 @@ class ChatWebSocketHandler(
                 }
             } catch (e: Exception) {
                 logger.warn("Couldn't send message to user $sessionId", e)
+            }
+        }
+    }
+
+    private fun updateChatForUsers(
+        chatId: ChatId,
+        userIds: List<UserId>
+    ) {
+        connectionLock.write {
+            userIds.forEach { userId ->
+                userChatIds.compute(userId) { _, chatIds ->
+                    (chatIds ?: mutableSetOf()).apply { add(chatId) }
+                }
+
+                userToSessions[userId]?.forEach { sessionId ->
+                    chatToSessions.compute(chatId) { _, sessions ->
+                        (sessions ?: mutableSetOf()).apply { add(sessionId) }
+                    }
+                }
             }
         }
     }

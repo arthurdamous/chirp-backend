@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class ChatMessageService(
@@ -29,6 +30,7 @@ class ChatMessageService(
     private val chatMessageRepository: ChatMessageRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val eventPublisher: EventPublisher,
+    private val chatMessageCacheEvictHelper: MessageCacheEvictHelper
 ) {
 
     @Transactional
@@ -47,9 +49,9 @@ class ChatMessageService(
 
         val savedMessage = chatMessageRepository.save(
             ChatMessageEntity(
+                id = messageId ?: UUID.randomUUID(),
                 chatId = chatId,
                 sender = sender,
-                id = messageId,
                 content = content.trim(),
                 chat = chat
             )
@@ -69,7 +71,10 @@ class ChatMessageService(
     }
 
     @Transactional
-    fun deleteMessage(requestUserId: UserId, messageId: ChatMessageId) {
+    fun deleteMessage(
+        requestUserId: UserId,
+        messageId: ChatMessageId
+    ) {
         val message = chatMessageRepository.findByIdOrNull(messageId)
             ?: throw MessageNotFoundException(messageId)
 
@@ -80,11 +85,6 @@ class ChatMessageService(
         chatMessageRepository.delete(message)
 
         applicationEventPublisher.publishEvent(MessageDeletedEvent(message.chatId, messageId))
-        evictMessagesCache(message.chatId)
-    }
-
-    @CacheEvict(cacheNames = ["messages"], key = "#chatId")
-    fun evictMessagesCache(chatId: ChatId) {
-        //NO-OP: Let spring handle cache evict
+        chatMessageCacheEvictHelper.evictMessagesCache(message.chatId)
     }
 }
